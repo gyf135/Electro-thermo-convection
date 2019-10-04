@@ -71,7 +71,7 @@ __device__ double Beta;
 double G_host = 9.8; // Gravity constant
 __device__ double G;
 
-double TH_host = 1; // Thermal diffusivity
+double TH_host = 1; // Temperature of the lower surface
 __device__ double TH;
 
 
