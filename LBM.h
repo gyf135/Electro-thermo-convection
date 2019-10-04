@@ -51,7 +51,7 @@ __constant__ double CFL = 0.01; // CFL = dt/dx
 __constant__ double dt = 0.01*1.0 / 100.0; // dt = dx * CFL need to change according to dx, dy
 __constant__ double cs_square = 1.0 / 3.0 / (0.01*0.01); // 1/3/(CFL^2)
 __constant__ double rho0 = 1600.0;
-__constant__ double charge0 = 0.0;
+__constant__ double charge0 = 10.0;
 __constant__ double voltage = 1.0e4;
 double voltage_host;
 __constant__ double eps = 1.0e-4;
