@@ -1,7 +1,7 @@
 /* This code accompanies
 *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
 *	 https://doi.org/10.1016/j.jcp.2019.07.029
-*   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+*	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
 *	 https://doi.org/10.1103/PhysRevFluids.4.103701
 *
 *   Yifei Guan, Igor Novosselov
@@ -38,15 +38,14 @@ int main(int argc, char* argv[])
 	cudaMemcpyToSymbol(exf, &exf_host, sizeof(double), 0, cudaMemcpyHostToDevice);
 	cudaMemcpyToSymbol(K, &K_host, sizeof(double), 0, cudaMemcpyHostToDevice);
 	cudaMemcpyToSymbol(D, &D_host, sizeof(double), 0, cudaMemcpyHostToDevice);
-	cudaMemcpyToSymbol(G, &G_host, sizeof(double), 0, cudaMemcpyHostToDevice);
-	cudaMemcpyToSymbol(Beta, &Beta_host, sizeof(double), 0, cudaMemcpyHostToDevice);
+	cudaMemcpyToSymbol(Ra, &Ra_host, sizeof(double), 0, cudaMemcpyHostToDevice);
 	cudaMemcpyToSymbol(TH, &TH_host, sizeof(double), 0, cudaMemcpyHostToDevice);
 
 
 
 
 	// Compute parameters
-	compute_parameters(T, M, C, Fe, Ra, Pr);
+	compute_parameters(T, M, C, Fe, Pr);
 
     printf("Simulating Electro-Thermo-convection in 2D\n");
     printf("      domain size: %ux%u\n",NX,NY);
@@ -54,7 +53,7 @@ int main(int argc, char* argv[])
     printf("                M: %g\n",*M);
     printf("                C: %g\n",*C);
     printf("               Fe: %g\n",*Fe);
-	printf("               Ra: %g\n", *Ra);
+	printf("               Ra: %g\n", Ra_host);
 	printf("               Pr: %g\n", *Pr);
     printf("        timesteps: %u\n",NSTEPS);
     printf("       save every: %u\n",NSAVE);

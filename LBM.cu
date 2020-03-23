@@ -1,7 +1,7 @@
 /* This code accompanies
 *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
 *	 https://doi.org/10.1016/j.jcp.2019.07.029
-*   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+*	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
 *	 https://doi.org/10.1103/PhysRevFluids.4.103701
 *
 *   Yifei Guan, Igor Novosselov
@@ -340,7 +340,7 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 	double Ex = ex[gpu_scalar_index(x, y)];
 	double Ey = ey[gpu_scalar_index(x, y)];
 	double forcex = charge * Ex + exf;
-	double forcey = charge * Ey + rho0*(1 + Beta*temp)*G;
+	double forcey = charge * Ey + rho0*(temp+1)*Ra*nu*D;
 
 	double ux = rhoinv*((ft1 + ft5 + ft8 - (ft3 + ft6 + ft7)) / CFL + forcex*dt*0.5);
 	double uy = rhoinv*((ft2 + ft5 + ft6 - (ft4 + ft7 + ft8)) / CFL + forcey*dt*0.5);
@@ -349,8 +349,8 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 		double xx = x*dx;
 		double yy = y*dy-0.5*dy;
 		// Rolling patterns
-		uy = (cos(2.0*M_PI*yy)-1)*cos(2*M_PI/LL*xx)*0.001;
-		ux = LL*sin(2.0*M_PI*yy)*sin(2*M_PI/LL*xx)*0.001;
+		uy = (cos(2.0*M_PI*yy)-1)*cos(2*M_PI/LL*xx)*0.0001;
+		ux = LL*sin(2.0*M_PI*yy)*sin(2*M_PI/LL*xx)*0.0001;
 	}
 	else {
 		if (y == 0) {
@@ -390,7 +390,7 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 			double Exm = ex[gpu_scalar_index(x, 1)];
 			double Eym = ey[gpu_scalar_index(x, 1)];
 			double forcexm = charge * Ex + exf;
-			double forceym = charge * Ey + rho0*(1 + Beta*tempm)*G;
+			double forceym = charge * Ey + rho0*(temp+1)*Ra*nu*D;
 
 			ux = -rhoinvm*((ftm1 + ftm5 + ftm8 - (ftm3 + ftm6 + ftm7)) / CFL + forcexm*dt*0.5);
 			uy = -rhoinvm*((ftm2 + ftm5 + ftm6 - (ftm4 + ftm7 + ftm8)) / CFL + forceym*dt*0.5);
@@ -929,7 +929,7 @@ __global__ void gpu_bc_charge(double *h0, double *h1, double *h2, double *temp0,
 }
 
 
-__host__ void compute_parameters(double *T, double *M, double *C, double *Fe, double *Ra, double *Pr) {
+__host__ void compute_parameters(double *T, double *M, double *C, double *Fe, double *Pr) {
 	double K_host;
 	double eps_host;
 	double voltage_host;
@@ -939,9 +939,7 @@ __host__ void compute_parameters(double *T, double *M, double *C, double *Fe, do
 	double charge0_host;
 	double rho0_host;
 	double TH_host;
-	double G_host;
 	double D_host;
-	double Beta_host;
 
 	cudaMemcpyFromSymbol(&K_host, K, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&eps_host, eps, sizeof(double), 0, cudaMemcpyDeviceToHost);
@@ -952,9 +950,9 @@ __host__ void compute_parameters(double *T, double *M, double *C, double *Fe, do
 	cudaMemcpyFromSymbol(&charge0_host, charge0, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&rho0_host, rho0, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&TH_host, TH, sizeof(double), 0, cudaMemcpyDeviceToHost);
-	cudaMemcpyFromSymbol(&G_host, G, sizeof(double), 0, cudaMemcpyDeviceToHost);
+	cudaMemcpyFromSymbol(&Ra_host, Ra, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&D_host, D, sizeof(double), 0, cudaMemcpyDeviceToHost);
-	cudaMemcpyFromSymbol(&Beta_host, Beta, sizeof(double), 0, cudaMemcpyDeviceToHost);
+
 
 
 
@@ -962,7 +960,6 @@ __host__ void compute_parameters(double *T, double *M, double *C, double *Fe, do
 	*T = eps_host*voltage_host / K_host / nu_host / rho0_host;
 	*C = charge0_host * Ly_host * Ly_host / (voltage_host * eps_host);
 	*Fe = K_host * voltage_host / diffu_host;
-	*Ra = G_host * Beta_host * TH_host * Ly_host * Ly_host * Ly_host / nu_host / D_host;
 	*Pr = nu_host / D_host;
 
 }
@@ -1157,9 +1154,9 @@ void save_data_tecplot(FILE *fout, double time, double *rho_gpu, double *charge_
 		fprintf(fout, "%s\n", str);
 	}
 	fprintf(fout, "\n");
-	fprintf(fout, "ZONE T=\"t=%g\", F=POINT, I = %d, J = %d\n", time, NX, NY-10);
+	fprintf(fout, "ZONE T=\"t=%g\", F=POINT, I = %d, J = %d\n", time, NX, NY);
 
-	for (unsigned int y = 5; y < NY-5; ++y)
+	for (unsigned int y = 0; y < NY; ++y)
 	{
 		for (unsigned int x = 0; x < NX; ++x)
 		{

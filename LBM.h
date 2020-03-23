@@ -1,7 +1,7 @@
 /* This code accompanies
 *   Two relaxation time lattice Boltzmann method coupled to fast Fourier transform Poisson solver: Application to electroconvective flow, Journal of Computational Physics
 *	 https://doi.org/10.1016/j.jcp.2019.07.029
-*   Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
+*	 Numerical analysis of electroconvection in cross-flow with unipolar charge injection, Physical Review Fluids
 *	 https://doi.org/10.1103/PhysRevFluids.4.103701
 *
 *   Yifei Guan, Igor Novosselov
@@ -17,27 +17,26 @@
 
 __device__ double test;
 
-__device__ int perturb = 0; // Change to 1 to apply finite amplitude perturbation
+__device__ int perturb = 1;
 
 int iteractionCount = 0;
 double *T = (double*)malloc(sizeof(double));
 double *M = (double*)malloc(sizeof(double));
 double *C = (double*)malloc(sizeof(double));
 double *Fe = (double*)malloc(sizeof(double));
-double *Ra = (double*)malloc(sizeof(double));
 double *Pr = (double*)malloc(sizeof(double));
 
 
-const unsigned int flag = 0; // if flat == 1, read previous data, otherwise initialize
-const int nThreads = 61; // can divide NX
+const unsigned int flag = 1; // if flat == 1, read previous data, otherwise initialize
+const int nThreads = 10; // can divide NX
 
 // define grids
-const unsigned int NX = 122; // number of grid points in x-direction, meaning 121 cells while wavelength is 122 with periodic boundaries
+const unsigned int NX = 140; // number of grid points in x-direction, meaning 121 cells while wavelength is 122 with periodic boundaries
 const unsigned int NY = 101; // number of grid points in y-direction, meaning NY-1 cells
 const unsigned int NE = 2 * (NY - 1);
 const unsigned int SIZE = NX*NE;
-__constant__ double LL = 1.22;
-__constant__ double Lx = 1.22;
+__constant__ double LL = 1.4;
+__constant__ double Lx = 1.4;
 __constant__ double Ly = 1.0;
 __constant__ double dx = 1.0 / 100.0; //need to change according to NX and LX
 __constant__ double dy = 1.0 / 100.0; //need to change according to NY and LY
@@ -55,23 +54,20 @@ __constant__ double charge0 = 10.0;
 __constant__ double voltage = 1.0e4;
 double voltage_host;
 __constant__ double eps = 1.0e-4;
-__constant__ double diffu = 6.25e-5;	//charge diffusivity
-double nu_host = 0.147;	// Viscosity
-__device__ double nu = 0.147;
+__constant__ double diffu = 1.25e-4;	//charge diffusivity
+double nu_host = 0.1085;	// Viscosity
+__device__ double nu = 0.1085;
 double K_host = 2.5e-5; // ion mobility
-__device__ double K;
+__device__ double K = 2.5e-5;
 
 //Thermal properties
-double D_host = 0.0147; // Thermal diffusivity
+double D_host = 0.01085; // Thermal diffusivity
 __device__ double D;
 
-double Beta_host = 1; // Thermal expansion rate
-__device__ double Beta;
+double Ra_host = 1000; // Gravity constant
+__device__ double Ra;
 
-double G_host = 9.8; // Gravity constant
-__device__ double G;
-
-double TH_host = 1; // Temperature of the lower surface
+double TH_host = -1; // Temperature of the lower surface
 __device__ double TH;
 
 
@@ -92,15 +88,15 @@ __constant__ double wd = 1.0 / 36.0; // diagonal weight
 
 // parameters for (two-relaxation time) TRT scheme
 __constant__ double V  = 1.0 / 12.0;
-__constant__ double VC = 1.0e-6;
-__constant__ double VT = 1.0 / 12.0;
+__constant__ double VC = 1.0 / 1000000.0;
+__constant__ double VT = 1.0 / 100.0;
 
 
-const unsigned int NSTEPS = 100000;
+const unsigned int NSTEPS = 10000000;
 const unsigned int NSAVE  = NSTEPS / 10;
 const unsigned int NMSG   =  NSAVE;
 const unsigned int NDMD = 5000000000000;
-const unsigned int printCurrent = 500;
+const unsigned int printCurrent = 5000;
 
 
 // physical time
@@ -137,7 +133,7 @@ void report_flow_properties(unsigned int,double,double*,double*,double*,double*,
 void save_scalar(const char*,double*,double*,unsigned int);
 void save_data_tecplot(FILE*, double, double*, double*, double*, double*, double*, double*, double*, double*, int);
 void save_data_end(FILE*, double, double*, double*, double*, double*, double*, double*, double*, double*);
-void compute_parameters(double*, double*, double*, double*, double*, double*);
+void compute_parameters(double*, double*, double*, double*, double*);
 void poisson_phi(double*, double*);
 void extension(double*, cufftDoubleComplex*);
 void efield(double*, double*, double*);
